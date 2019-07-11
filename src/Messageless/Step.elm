@@ -1,6 +1,5 @@
 module Messageless.Step exposing (..)
 
-import Messageless.StepCat as StepCat exposing (StepCat(..))
 import Monocle.Lens as Lens exposing (Lens)
 import Monocle.Optional as Optional exposing (Optional)
 import Monocle.Prism as Prism exposing (Prism)
@@ -8,52 +7,76 @@ import Task exposing (Task)
 
 
 {-|
-A simpler variation of StepCat,
-abstracting over the changing of the type thru actions.
+Composable abstraction over a function, which does two things:
 
-You're likely to never need the more complicated basis API of StepCat.
+- Accesseses and modifies the state;
+- Generates a command, which itself produces another step instead of a message.
+
 -}
-type alias Step state = StepCat state state
+type Step state result = 
+  LoopingStep (state -> (state, Cmd (Step state result))) |
+  EmittingStep result
 
-empty : Step state
-empty = StepCat.identity
+map : (a -> b) -> Step state a -> Step state b
+map aToB step = case step of
+  LoopingStep loop -> LoopingStep <| loop >> (aToB |> map |> Cmd.map |> Tuple.mapSecond)
+  EmittingStep a -> EmittingStep (aToB a)
 
-always : state -> Step state
-always = StepCat.always
+pure : a -> Step state a
+pure = EmittingStep
 
-modify : (state -> state) -> Step state
-modify = StepCat.modify
+andThen : (a -> Step state b) -> Step state a -> Step state b
+andThen aToStepB step = case step of
+  LoopingStep loop -> LoopingStep <| loop >> Tuple.mapSecond (Cmd.map (andThen aToStepB))
+  EmittingStep a -> aToStepB a
 
-cmd : (state -> Cmd (Step state)) -> Step state
-cmd = StepCat.cmd
+get : Step state state
+get = LoopingStep <| \ state -> (state, Cmd.map (\ _ -> EmittingStep state) Cmd.none)
 
-task : (state -> Task Never (Step state)) -> Step state
-task = StepCat.task
+put : state -> Step state ()
+put state = LoopingStep <| \ _ -> (state, Cmd.none)
 
-modifyAndCmd : (state -> state) -> (state -> Cmd (Step state)) -> Step state
-modifyAndCmd = StepCat.modifyAndCmd
+modify : (state -> state) -> Step state ()
+modify fn = LoopingStep (\ state -> (fn state, Cmd.none))
 
-modifyAndTask : (state -> state) -> (state -> Task Never (Step state)) -> Step state
-modifyAndTask = StepCat.modifyAndTask
+cmd : (state -> Cmd result) -> Step state result
+cmd fn = LoopingStep <| \ state ->
+  fn state |>
+  Cmd.map EmittingStep |>
+  Tuple.pair state
 
-batch : List (Step state) -> Step state
-batch = StepCat.batch
+task : (state -> Task Never result) -> Step state result
+task x = LoopingStep (\ state -> (state, Task.perform EmittingStep (x state)))
 
-map : (a -> b) -> (b -> a) -> Step a -> Step b
-map = StepCat.mapBoth
+modifyAndCmd : (state -> state) -> (state -> Cmd result) -> Step state result
+modifyAndCmd stateFn cmdFn = LoopingStep (\ state -> (stateFn state, Cmd.map EmittingStep (cmdFn state)))
 
-zoomWithLens : Lens b a -> Step a -> Step b
-zoomWithLens lens (StepCat stepFn) = StepCat <| \ b ->
-  lens.get b |> stepFn |> Tuple.mapBoth (\ a -> lens.set a b) (Cmd.map (zoomWithLens lens))
+modifyAndTask : (state -> state) -> (state -> Task Never result) -> Step state result
+modifyAndTask stateFn taskFn = LoopingStep (\ state -> (stateFn state, Task.perform EmittingStep (taskFn state)))
 
-zoomWithOptional : Optional b a -> Step a -> Step b
-zoomWithOptional optional (StepCat stepFn) = StepCat <| \ b ->
-  case optional.getOption b of
-    Just a -> stepFn a |> Tuple.mapBoth (\ newA -> optional.set newA b) (Cmd.map (zoomWithOptional optional))
-    Nothing -> (b, Cmd.none)
+zoomWithLens : Lens b a -> Step a result -> Step b result
+zoomWithLens lens step = case step of
+  EmittingStep result -> EmittingStep result
+  LoopingStep loop -> LoopingStep <| \ b ->
+    lens.get b |> loop |> Tuple.mapBoth (\ a -> lens.set a b) (Cmd.map (zoomWithLens lens))
 
-zoomWithPrism : Prism b a -> Step a -> Step b
-zoomWithPrism prism (StepCat stepFn) = StepCat <| \ b ->
-  case prism.getOption b of
-    Just a -> stepFn a |> Tuple.mapBoth (\ newA -> prism.reverseGet newA) (Cmd.map (zoomWithPrism prism))
-    Nothing -> (b, Cmd.none)
+zoomWithOptional : Optional b a -> Step a result -> Step b result
+zoomWithOptional optional step = case step of
+  LoopingStep loop -> LoopingStep <| \ b ->
+    case optional.getOption b of
+      Just a -> loop a |> Tuple.mapBoth (\ newA -> optional.set newA b) (Cmd.map (zoomWithOptional optional))
+      Nothing -> (b, Cmd.none)
+  EmittingStep result -> EmittingStep result
+
+zoomWithPrism : Prism b a -> Step a result -> Step b result
+zoomWithPrism prism step = case step of
+  LoopingStep loop -> LoopingStep <| \ b ->
+    case prism.getOption b of
+      Just a -> loop a |> Tuple.mapBoth (\ newA -> prism.reverseGet newA) (Cmd.map (zoomWithPrism prism))
+      Nothing -> (b, Cmd.none)
+  EmittingStep result -> EmittingStep result
+
+toUpdate : Step state () -> (state -> (state, Cmd (Step state ())))
+toUpdate step = case step of
+  LoopingStep loop -> loop
+  EmittingStep () -> \ state -> (state, Cmd.none)

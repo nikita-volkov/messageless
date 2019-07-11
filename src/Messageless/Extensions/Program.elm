@@ -2,22 +2,21 @@ module Messageless.Extensions.Program exposing (..)
 
 import Browser exposing (..)
 import Html exposing (Html)
-import Messageless.StepCat as StepCat exposing (StepCat(..))
 import Messageless.Step as Step exposing (Step)
 
 
 step :
   (flags -> state) ->
-  Step state ->
-  (state -> Sub (Step state)) ->
+  Step state () ->
+  (state -> Sub (Step state ())) ->
   (state -> String) ->
-  (state -> List (Html (Step state))) ->
-  Program flags state (Step state)
-step initState (StepCat initStepFn) subscriptions title html =
+  (state -> List (Html (Step state ()))) ->
+  Program flags state (Step state ())
+step initState initStep subscriptions title html =
   document
     {
-      init = initState >> initStepFn,
-      update = \ (StepCat update) -> update,
+      init = initState >> Step.toUpdate initStep,
+      update = Step.toUpdate,
       subscriptions = subscriptions,
       view = \ state -> Document (title state) (html state)
     }
