@@ -1,0 +1,19 @@
+{
+    "type": "package",
+    "name": "nikita-volkov/messageless",
+    "summary": "Messageless update architecture",
+    "license": "MIT",
+    "version": "1.0.0",
+    "exposed-modules": [
+        "Messageless.Extensions.Program",
+        "Messageless.Step"
+    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
+    "dependencies": {
+        "arturopala/elm-monocle": "2.1.0 <= v < 3.0.0",
+        "elm/core": "1.0.0 <= v < 2.0.0"
+    },
+    "test-dependencies": {
+        "elm-explorations/test": "1.2.1 <= v < 2.0.0"
+    }
+}
