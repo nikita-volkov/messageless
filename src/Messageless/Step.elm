@@ -35,6 +35,10 @@ andThen aToStepB step = case step of
   LoopingStep loop -> LoopingStep <| loop >> Tuple.mapSecond (Cmd.map (andThen aToStepB))
   EmittingStep a -> aToStepB a
 
+{-| A flipped version of `andThen`. -}
+bind : Step state a -> (a -> Step state b) -> Step state b
+bind stepA aToStepB = andThen aToStepB stepA
+
 ignore : Step state a -> Step state ()
 ignore = map (always ())
 
