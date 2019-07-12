@@ -1,4 +1,4 @@
-module Messageless.Extensions.Program exposing (..)
+module Messageless.Program exposing (..)
 
 import Browser exposing (..)
 import Html exposing (Html)
