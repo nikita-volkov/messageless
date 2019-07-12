@@ -39,10 +39,10 @@ get : Step state state
 get = LoopingStep <| \ state -> (state, Cmd.pure (EmittingStep state))
 
 put : state -> Step state ()
-put state = LoopingStep <| \ _ -> (state, Cmd.none)
+put state = LoopingStep <| \ _ -> (state, Cmd.pure (EmittingStep ()))
 
 modify : (state -> state) -> Step state ()
-modify fn = LoopingStep (\ state -> (fn state, Cmd.none))
+modify fn = LoopingStep (\ state -> (fn state, Cmd.pure (EmittingStep ())))
 
 interact : (state -> (result, state)) -> Step state result
 interact fn = LoopingStep (fn >> \ (result, state) -> (state, Cmd.pure (EmittingStep result)))
@@ -68,18 +68,18 @@ zoomWithLens lens step = case step of
   LoopingStep loop -> LoopingStep <| \ b ->
     lens.get b |> loop |> Tuple.mapBoth (\ a -> lens.set a b) (Cmd.map (zoomWithLens lens))
 
-zoomWithOptional : Optional b a -> Step a result -> Step b result
+zoomWithOptional : Optional b a -> Step a result -> Step b (Maybe result)
 zoomWithOptional optional step = case step of
   LoopingStep loop -> LoopingStep <| \ b ->
     case optional.getOption b of
       Just a -> loop a |> Tuple.mapBoth (\ newA -> optional.set newA b) (Cmd.map (zoomWithOptional optional))
-      Nothing -> (b, Cmd.none)
-  EmittingStep result -> EmittingStep result
+      Nothing -> (b, Cmd.pure (EmittingStep Nothing))
+  EmittingStep result -> EmittingStep (Just result)
 
-zoomWithPrism : Prism b a -> Step a result -> Step b result
+zoomWithPrism : Prism b a -> Step a result -> Step b (Maybe result)
 zoomWithPrism prism step = case step of
   LoopingStep loop -> LoopingStep <| \ b ->
     case prism.getOption b of
       Just a -> loop a |> Tuple.mapBoth (\ newA -> prism.reverseGet newA) (Cmd.map (zoomWithPrism prism))
-      Nothing -> (b, Cmd.none)
-  EmittingStep result -> EmittingStep result
+      Nothing -> (b, Cmd.pure (EmittingStep Nothing))
+  EmittingStep result -> EmittingStep (Just result)
