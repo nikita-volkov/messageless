@@ -44,8 +44,8 @@ put state = LoopingStep <| \ _ -> (state, Cmd.none)
 modify : (state -> state) -> Step state ()
 modify fn = LoopingStep (\ state -> (fn state, Cmd.none))
 
-modifyAndGet : (state -> (result, state)) -> Step state result
-modifyAndGet fn = LoopingStep (fn >> \ (result, state) -> (state, Cmd.pure (EmittingStep result)))
+interact : (state -> (result, state)) -> Step state result
+interact fn = LoopingStep (fn >> \ (result, state) -> (state, Cmd.pure (EmittingStep result)))
 
 cmd : (state -> Cmd result) -> Step state result
 cmd fn = LoopingStep <| \ state ->
