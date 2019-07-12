@@ -75,8 +75,3 @@ zoomWithPrism prism step = case step of
       Just a -> loop a |> Tuple.mapBoth (\ newA -> prism.reverseGet newA) (Cmd.map (zoomWithPrism prism))
       Nothing -> (b, Cmd.none)
   EmittingStep result -> EmittingStep result
-
-toUpdate : Step state () -> (state -> (state, Cmd (Step state ())))
-toUpdate step = case step of
-  LoopingStep loop -> loop
-  EmittingStep () -> \ state -> (state, Cmd.none)
