@@ -25,6 +25,11 @@ map aToB step = case step of
 pure : a -> Step state a
 pure = EmittingStep
 
+and : Step state a -> Step state () -> Step state a
+and secondStep firstStep = case firstStep of
+  LoopingStep firstLoop -> LoopingStep <| firstLoop >> Tuple.mapSecond (Cmd.map (and secondStep))
+  EmittingStep _ -> secondStep
+
 andThen : (a -> Step state b) -> Step state a -> Step state b
 andThen aToStepB step = case step of
   LoopingStep loop -> LoopingStep <| loop >> Tuple.mapSecond (Cmd.map (andThen aToStepB))
