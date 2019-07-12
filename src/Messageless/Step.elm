@@ -35,6 +35,9 @@ andThen aToStepB step = case step of
   LoopingStep loop -> LoopingStep <| loop >> Tuple.mapSecond (Cmd.map (andThen aToStepB))
   EmittingStep a -> aToStepB a
 
+ignore : Step state a -> Step state ()
+ignore = map (always ())
+
 get : Step state state
 get = LoopingStep <| \ state -> (state, Cmd.pure (EmittingStep state))
 
