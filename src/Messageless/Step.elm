@@ -36,8 +36,8 @@ andThen aToStepB step = case step of
   EmittingStep a -> aToStepB a
 
 {-| A flipped version of `andThen`. -}
-bind : Step state a -> (a -> Step state b) -> Step state b
-bind stepA aToStepB = andThen aToStepB stepA
+with : Step state a -> (a -> Step state b) -> Step state b
+with stepA aToStepB = andThen aToStepB stepA
 
 ignore : Step state a -> Step state ()
 ignore = map (always ())
