@@ -9,6 +9,7 @@ provides for composition of effects in-between the cycles of a program.
 The core idea behind this library is that messages in Elm
 surve no other purpose but to be interpreted
 as an update to the model paired with a side-effect (Cmd).
+So why not just pass around the immediate references to the update functions instead of messages.
 
 Interpreting messages requires redundant logic
 involving pattern-matching, which results in extra computation,
