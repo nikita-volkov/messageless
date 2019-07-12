@@ -4,7 +4,7 @@ import Monocle.Lens as Lens exposing (Lens)
 import Monocle.Optional as Optional exposing (Optional)
 import Monocle.Prism as Prism exposing (Prism)
 import Task exposing (Task)
-
+import Messageless.Cmd as Cmd
 
 {-|
 Composable abstraction over a function, which does two things:
@@ -36,13 +36,16 @@ andThen aToStepB step = case step of
   EmittingStep a -> aToStepB a
 
 get : Step state state
-get = LoopingStep <| \ state -> (state, Cmd.map (\ _ -> EmittingStep state) Cmd.none)
+get = LoopingStep <| \ state -> (state, Cmd.pure (EmittingStep state))
 
 put : state -> Step state ()
 put state = LoopingStep <| \ _ -> (state, Cmd.none)
 
 modify : (state -> state) -> Step state ()
 modify fn = LoopingStep (\ state -> (fn state, Cmd.none))
+
+modifyAndGet : (state -> (result, state)) -> Step state result
+modifyAndGet fn = LoopingStep (fn >> \ (result, state) -> (state, Cmd.pure (EmittingStep result)))
 
 cmd : (state -> Cmd result) -> Step state result
 cmd fn = LoopingStep <| \ state ->
