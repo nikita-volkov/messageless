@@ -1,5 +1,7 @@
 module Messageless.Cmd exposing (..)
 
+import Task
+
 
 pure : a -> Cmd a
-pure a = Cmd.map (always a) Cmd.none
+pure a = Task.perform identity (Task.succeed a)
