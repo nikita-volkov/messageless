@@ -48,6 +48,9 @@ get = LoopingStep <| \ state -> (state, Cmd.pure (EmittingStep state))
 put : state -> Step state ()
 put state = LoopingStep <| \ _ -> (state, Cmd.pure (EmittingStep ()))
 
+access : (state -> result) -> Step state result
+access fn = LoopingStep <| \ state -> (state, Cmd.pure (EmittingStep (fn state)))
+
 modify : (state -> state) -> Step state ()
 modify fn = LoopingStep (\ state -> (fn state, Cmd.pure (EmittingStep ())))
 
