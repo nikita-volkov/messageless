@@ -42,6 +42,14 @@ executing stepA aToStepB = andThen aToStepB stepA
 ignore : Step state a -> Step state ()
 ignore = map (always ())
 
+traverse : (a -> Step state b) -> List a -> Step state (List b)
+traverse aToStepB =
+  let
+    build listOfB listOfA = case listOfA of
+      a :: tail -> aToStepB a |> andThen (\ b -> build (b :: listOfB) tail)
+      _ -> pure (List.reverse listOfB)
+    in build []
+
 get : Step state state
 get = LoopingStep <| \ state -> (state, Cmd.pure (EmittingStep state))
 
