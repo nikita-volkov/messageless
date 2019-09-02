@@ -80,6 +80,11 @@ modifyAndCmd stateFn cmdFn = LoopingStep (\ state -> (stateFn state, Cmd.map Emi
 modifyAndTask : (state -> state) -> (state -> Task Never result) -> Step state result
 modifyAndTask stateFn taskFn = LoopingStep (\ state -> (stateFn state, Task.perform EmittingStep (taskFn state)))
 
+mapState : (a -> b) -> (b -> a) -> Step a result -> Step b result
+mapState aToB bToA step = case step of
+  EmittingStep result -> EmittingStep result
+  LoopingStep loop -> LoopingStep <| bToA >> loop >> Tuple.mapBoth aToB (Cmd.map (mapState aToB bToA))
+
 zoomWithLens : Lens b a -> Step a result -> Step b result
 zoomWithLens lens step = case step of
   EmittingStep result -> EmittingStep result
