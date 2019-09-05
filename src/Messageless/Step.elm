@@ -62,6 +62,10 @@ access fn = LoopingStep <| \ state -> (state, Cmd.pure (EmittingStep (fn state))
 modify : (state -> state) -> Step state ()
 modify fn = LoopingStep (\ state -> (fn state, Cmd.pure (EmittingStep ())))
 
+accessAndModify : (state -> result) -> (state -> state) -> Step state result
+accessAndModify accessProj modifyProj =
+  interact (\ state -> (accessProj state, modifyProj state))
+
 interact : (state -> (result, state)) -> Step state result
 interact fn = LoopingStep (fn >> \ (result, state) -> (state, Cmd.pure (EmittingStep result)))
 
