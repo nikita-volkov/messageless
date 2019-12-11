@@ -22,6 +22,9 @@ map aToB step = case step of
   LoopingStep loop -> LoopingStep <| loop >> (aToB |> map |> Cmd.map |> Tuple.mapSecond)
   EmittingStep a -> EmittingStep (aToB a)
 
+map2 : (a -> b -> c) -> Step state a -> Step state b -> Step state c
+map2 aToBToC stepA stepB = andThen (\ a -> map (\ b -> aToBToC a b) stepB) stepA
+
 pure : a -> Step state a
 pure = EmittingStep
 
