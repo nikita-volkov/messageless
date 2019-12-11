@@ -30,6 +30,9 @@ pure = Step.pure << List.singleton
 and : Signal state a -> Signal state b -> Signal state a
 and = Step.and
 
+andThen : (a -> Signal state b) -> Signal state a -> Signal state b
+andThen aToSignalB = Step.andThen (Step.traverse aToSignalB >> Step.map List.concat)
+
 traverse : (a -> Signal state b) -> List a -> Signal state (List b)
 traverse aToSignalB = Step.traverse aToSignalB
 
