@@ -18,6 +18,9 @@ unitStep = Step.map (always [])
 empty : Signal state a
 empty = Step.pure []
 
+maybe : Signal s a -> Signal s (Maybe a)
+maybe = Step.map (\ list -> if List.isEmpty list then [Nothing] else List.map Just list)
+
 map : (a -> b) -> Signal state a -> Signal state b
 map aToB = Step.map (List.map aToB)
 
