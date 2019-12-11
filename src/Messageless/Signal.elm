@@ -12,6 +12,9 @@ type alias Signal state notification = Step state (List notification)
 step : Step a b -> Signal a b
 step = Step.map List.singleton
 
+unitStep : Step a () -> Signal a b
+unitStep = Step.map (always [])
+
 empty : Signal state a
 empty = Step.pure []
 
@@ -33,14 +36,14 @@ traverse aToSignalB = Step.traverse aToSignalB
 get : Signal state state
 get = step Step.get
 
-put : state -> Signal state ()
-put state = step (Step.put state)
+put : state -> Signal state a
+put state = unitStep (Step.put state)
 
 access : (state -> result) -> Signal state result
 access fn = step (Step.access fn)
 
-modify : (state -> state) -> Signal state ()
-modify fn = step (Step.modify fn)
+modify : (state -> state) -> Signal state a
+modify fn = unitStep (Step.modify fn)
 
 accessAndModify : (state -> result) -> (state -> state) -> Signal state result
 accessAndModify accessProj modifyProj = step (Step.accessAndModify accessProj modifyProj)
