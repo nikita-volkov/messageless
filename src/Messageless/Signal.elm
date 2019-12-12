@@ -21,6 +21,9 @@ empty = Step.pure []
 maybe : Signal s a -> Signal s (Maybe a)
 maybe = Step.map (\ list -> if List.isEmpty list then [Nothing] else List.map Just list)
 
+ignore : Signal state a -> Signal state b
+ignore = and empty
+
 map : (a -> b) -> Signal state a -> Signal state b
 map aToB = Step.map (List.map aToB)
 
