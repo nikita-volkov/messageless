@@ -22,7 +22,7 @@ maybe : Signal s a -> Signal s (Maybe a)
 maybe = Step.map (\ list -> if List.isEmpty list then [Nothing] else List.map Just list)
 
 ignore : Signal state a -> Signal state b
-ignore = and empty
+ignore = Step.map (always [])
 
 map : (a -> b) -> Signal state a -> Signal state b
 map aToB = Step.map (List.map aToB)
@@ -33,8 +33,8 @@ map2 aToBToC = Step.map2 (List.map2 aToBToC)
 pure : a -> Signal state a
 pure = Step.pure << List.singleton
 
-and : Signal state a -> Signal state b -> Signal state a
-and = Step.and
+and : Signal state a -> Signal state a -> Signal state a
+and secondSignal = andThen (\ a -> Step.map ((::) a) secondSignal)
 
 andThen : (a -> Signal state b) -> Signal state a -> Signal state b
 andThen aToSignalB = Step.andThen (Step.traverse aToSignalB >> Step.map List.concat)
