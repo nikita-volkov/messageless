@@ -9,6 +9,12 @@ import Task exposing (Task)
 
 type alias Signal state notification = Step state (List notification)
 
+run : Signal state notification -> state -> (List notification, state, Cmd (Signal state notification))
+run signal = case signal of
+  Step.LoopingStep loop -> \ state -> case loop state of
+    (nextState, cmd_) -> ([], nextState, cmd_)
+  Step.EmittingStep notifications -> \ state -> (notifications, state, Cmd.none)
+
 step : Step a b -> Signal a b
 step = Step.map List.singleton
 
