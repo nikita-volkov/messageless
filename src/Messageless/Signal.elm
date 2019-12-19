@@ -72,6 +72,9 @@ cmd fn = step (Step.cmd fn)
 task : (state -> Task Never result) -> Signal state result
 task x = step (Step.task x)
 
+attemptTask : (state -> Task err result) -> Signal state (Result err result)
+attemptTask fn = step (Step.cmd (fn >> Task.attempt identity))
+
 zoomWithLens : Lens b a -> Signal a result -> Signal b result
 zoomWithLens = Step.zoomWithLens
 
